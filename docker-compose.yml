@@ -1,0 +1,51 @@
+services:
+  router-test:
+    build: .
+    volumes:
+      - ./results:/app/results
+    command: ["./message_router"]
+    deploy:
+      resources:
+        limits:
+          cpus: '8'
+          memory: 8G
+        reservations:
+          cpus: '4'
+          memory: 4G
+    environment:
+      - OMP_NUM_THREADS=1
+      - GOMP_CPU_AFFINITY=0
+
+  router-benchmark:
+    build: .
+    volumes:
+      - ./results:/app/results
+    command: ["./benchmarks/queue_perf"]
+    deploy:
+      resources:
+        limits:
+          cpus: '8'
+          memory: 4G
+        reservations:
+          cpus: '4'
+          memory: 2G
+    environment:
+      - OMP_NUM_THREADS=1
+      - GOMP_CPU_AFFINITY=0
+
+  router-benchmark-all:
+    build: .
+    volumes:
+      - ./results:/app/results
+    command: ["./benchmarks/run_all_benchmarks.sh"]
+    deploy:
+      resources:
+        limits:
+          cpus: '8'
+          memory: 4G
+        reservations:
+          cpus: '4'
+          memory: 2G
+    environment:
+      - OMP_NUM_THREADS=1
+      - GOMP_CPU_AFFINITY=0
