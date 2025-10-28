@@ -12,9 +12,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0")
 find_package(PkgConfig REQUIRED)
 find_package(benchmark REQUIRED)
 find_package(Threads REQUIRED)
-
-
-pkg_check_modules(JSONCPP REQUIRED jsoncpp)
+find_package(jsoncpp REQUIRED)
 
 
 include_directories(include)
@@ -47,9 +45,8 @@ add_library(message_router_lib STATIC ${SOURCES} ${HEADERS})
 
 
 target_link_libraries(message_router_lib 
-    ${JSONCPP_LIBRARIES}
+    jsoncpp_lib
     Threads::Threads
-    atomic
 )
 
 
@@ -58,55 +55,49 @@ add_executable(message_router src/main.cpp)
 
 target_link_libraries(message_router 
     message_router_lib
-    ${JSONCPP_LIBRARIES}
+    jsoncpp_lib
     Threads::Threads
-    atomic
 )
 
 
 add_executable(queue_perf benchmarks/queue_performance.cpp)
 target_link_libraries(queue_perf 
     message_router_lib
-    ${JSONCPP_LIBRARIES}
+    jsoncpp_lib
     benchmark::benchmark
     Threads::Threads
-    atomic
 )
 
 add_executable(routing_perf benchmarks/routing_latency.cpp)
 target_link_libraries(routing_perf 
     message_router_lib
-    ${JSONCPP_LIBRARIES}
+    jsoncpp_lib
     benchmark::benchmark
     Threads::Threads
-    atomic
 )
 
 add_executable(memory_perf benchmarks/memory_allocation.cpp)
 target_link_libraries(memory_perf 
     message_router_lib
-    ${JSONCPP_LIBRARIES}
+    jsoncpp_lib
     benchmark::benchmark
     Threads::Threads
-    atomic
 )
 
 add_executable(scaling_perf benchmarks/scaling_benchmark.cpp)
 target_link_libraries(scaling_perf 
     message_router_lib
-    ${JSONCPP_LIBRARIES}
+    jsoncpp_lib
     benchmark::benchmark
     Threads::Threads
-    atomic
 )
 
 add_executable(simple_bench benchmarks/simple_benchmark.cpp)
 target_link_libraries(simple_bench 
     message_router_lib
-    ${JSONCPP_LIBRARIES}
+    jsoncpp_lib
     benchmark::benchmark
     Threads::Threads
-    atomic
 )
 
 

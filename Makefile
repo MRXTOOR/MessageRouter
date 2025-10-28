@@ -21,7 +21,7 @@ build:
 	@echo "Building Message Router..."
 	@mkdir -p $(BUILD_DIR)
 	@cd $(BUILD_DIR) && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="$(CXXFLAGS)" ..
-	@cd $(BUILD_DIR) && make -j$$(nproc)
+	@cd $(BUILD_DIR) && make -j$$(sysctl -n hw.ncpu)
 	@echo "Build completed!"
 
 
@@ -111,7 +111,7 @@ debug:
 	@echo "Building in debug mode..."
 	@mkdir -p $(BUILD_DIR)
 	@cd $(BUILD_DIR) && cmake -DCMAKE_BUILD_TYPE=Debug ..
-	@cd $(BUILD_DIR) && make -j$$(nproc)
+	@cd $(BUILD_DIR) && make -j$$(sysctl -n hw.ncpu)
 	@echo "Debug build completed!"
 
 

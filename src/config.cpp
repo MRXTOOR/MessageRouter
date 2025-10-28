@@ -1,7 +1,7 @@
 #include "../include/config.h"
 #include <fstream>
 #include <iostream>
-#include <jsoncpp/json/json.h>
+#include <json/json.h>
 #include <cmath>
 #include <string>
 #include <cstdlib>
