@@ -1,0 +1,214 @@
+name: Security
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 3 * * 0' # Every Sunday at 3 AM UTC
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+    
+    - name: Run CodeQL Analysis
+      uses: github/codeql-action/init@v3
+      with:
+        languages: cpp
+    
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v3
+    
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+    
+    - name: Run Semgrep
+      uses: returntocorp/semgrep-action@v1
+      with:
+        config: >-
+          p/security-audit
+          p/owasp-top-ten
+          p/cwe-top-25
+          p/security
+        generateSarif: "1"
+    
+    - name: Upload Semgrep results
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: semgrep.sarif
+
+  dependency-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          cmake \
+          make \
+          libjsoncpp-dev \
+          libatomic1 \
+          build-essential \
+          pkg-config
+    
+    - name: Build project
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release
+        make -j$(nproc)
+    
+    - name: Run OWASP Dependency Check
+      uses: dependency-check/Dependency-Check_Action@main
+      with:
+        project: 'MessageRouter'
+        path: '.'
+        format: 'SARIF'
+        args: >
+          --enableRetired
+          --enableExperimental
+          --failOnCVSS 7
+          --out reports/
+    
+    - name: Upload dependency check results
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: reports/dependency-check-report.sarif
+
+  static-analysis:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Install static analysis tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          clang-tidy \
+          cppcheck \
+          cpplint \
+          iwyu \
+          flawfinder \
+          rats
+    
+    - name: Run cppcheck
+      run: |
+        cppcheck --enable=all --inconclusive --std=c++17 \
+          --suppress=missingIncludeSystem \
+          --suppress=unusedFunction \
+          --xml --xml-version=2 \
+          src/ include/ 2> cppcheck-results.xml || true
+    
+    - name: Run clang-tidy
+      run: |
+        find src/ include/ -name "*.cpp" -o -name "*.h" | \
+        xargs clang-tidy -p build/ \
+          --checks='-*,clang-analyzer-*,modernize-*,readability-*,performance-*,security-*' \
+          --format-style=file \
+          --export-fixes=clang-tidy-fixes.yaml || true
+    
+    - name: Run cpplint
+      run: |
+        find src/ include/ -name "*.cpp" -o -name "*.h" | \
+        xargs cpplint --filter=-build/include,-build/namespaces,-readability/namespace \
+          --output=vs7 2> cpplint-results.txt || true
+    
+    - name: Run include-what-you-use
+      run: |
+        find src/ include/ -name "*.cpp" | \
+        xargs include-what-you-use -std=c++17 -I./include \
+          --transitive_includes_only \
+          --no_fwd_decls 2> iwyu-results.txt || true
+    
+    - name: Run flawfinder
+      run: |
+        flawfinder --html --context --columns --dataonly src/ include/ > flawfinder-results.html || true
+    
+    - name: Run RATS
+      run: |
+        rats --html src/ include/ > rats-results.html || true
+    
+    - name: Upload static analysis results
+      uses: actions/upload-artifact@v4
+      with:
+        name: static-analysis-results
+        path: |
+          cppcheck-results.xml
+          clang-tidy-fixes.yaml
+          cpplint-results.txt
+          iwyu-results.txt
+          flawfinder-results.html
+          rats-results.html
+        retention-days: 30
+
+  fuzzing:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Install AFL++ and dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          afl++ \
+          cmake \
+          make \
+          libjsoncpp-dev \
+          libatomic1 \
+          build-essential \
+          pkg-config
+    
+    - name: Build with AFL++
+      run: |
+        mkdir build
+        cd build
+        export CC=afl-clang-fast
+        export CXX=afl-clang-fast++
+        cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined"
+        make -j$(nproc)
+    
+    - name: Prepare fuzzing corpus
+      run: |
+        mkdir -p fuzz_corpus
+        echo '{"scenario":"baseline","duration_secs":1,"producers":{"count":1,"messages_per_sec":1000,"distribution":{"msg_type_0":0.25,"msg_type_1":0.25,"msg_type_2":0.25,"msg_type_3":0.25}},"processors":{"count":1,"processing_times_ns":{"msg_type_0":100,"msg_type_1":100,"msg_type_2":100,"msg_type_3":100}},"strategies":{"count":1,"processing_times_ns":{"strategy_0":100,"strategy_1":100,"strategy_2":100}},"routing":{"stage1_rules":{"msg_type_0":0,"msg_type_1":0,"msg_type_2":0,"msg_type_3":0},"stage2_rules":{"msg_type_0":0,"msg_type_1":0,"msg_type_2":0,"msg_type_3":0}}}}' > fuzz_corpus/baseline.json
+    
+    - name: Run AFL++ fuzzing
+      run: |
+        cd build
+        timeout 300s afl-fuzz -i ../fuzz_corpus -o fuzz_output -- ./message_router @@ || echo "Fuzzing completed"
+    
+    - name: Upload fuzzing results
+      uses: actions/upload-artifact@v4
+      with:
+        name: fuzzing-results
+        path: build/fuzz_output/
+        retention-days: 7

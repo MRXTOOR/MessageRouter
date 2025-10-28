@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-echo "Запуск всех бенчмарков Message Router..."
+echo "Running all Message Router benchmarks..."
 
 
 mkdir -p results/benchmarks
@@ -12,13 +12,13 @@ run_benchmark() {
     local executable=$2
     local output_file="results/benchmarks/${benchmark_name}.json"
     
-    echo "Запуск ${benchmark_name}..."
+    echo "Running ${benchmark_name}..."
     
     if [ -f "./${executable}" ]; then
         ./${executable} --benchmark_format=json --benchmark_out=${output_file}
-        echo "Результаты сохранены в ${output_file}"
+        echo "Results saved in ${output_file}"
     else
-        echo "Ошибка: исполняемый файл ${executable} не найден"
+        echo "Error: executable file ${executable} not found"
         return 1
     fi
 }
@@ -29,26 +29,26 @@ run_benchmark "routing_latency" "routing_perf"
 run_benchmark "memory_allocation" "memory_perf"
 run_benchmark "scaling_benchmark" "scaling_perf"
 
-echo "Все бенчмарки завершены!"
-echo "Результаты доступны в директории results/benchmarks/"
+echo "All benchmarks completed!"
+echo "Results available in results/benchmarks/ directory"
 
 
-echo "Создание сводного отчета..."
+echo "Creating summary report..."
 cat > results/benchmarks/summary.txt << EOF
-=== СВОДНЫЙ ОТЧЕТ БЕНЧМАРКОВ ===
-Дата: $(date)
-Версия: Message Router v1.0
+=== BENCHMARK SUMMARY REPORT ===
+Date: $(date)
+Version: Message Router v1.0
 
-Запущенные бенчмарки:
-1. queue_performance.json - Производительность очередей
-2. routing_latency.json - Задержка маршрутизации
-3. memory_allocation.json - Выделение памяти
-4. scaling_benchmark.json - Масштабирование
+Benchmarks run:
+1. queue_performance.json - Queue performance
+2. routing_latency.json - Routing latency
+3. memory_allocation.json - Memory allocation
+4. scaling_benchmark.json - Scaling
 
-Для просмотра результатов используйте:
-- JSON файлы для детального анализа
-- Этот файл для быстрого обзора
+To view results use:
+- JSON files for detailed analysis
+- This file for quick overview
 
 EOF
 
-echo "Сводный отчет создан: results/benchmarks/summary.txt"
+echo "Summary report created: results/benchmarks/summary.txt"

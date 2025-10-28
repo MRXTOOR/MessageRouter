@@ -52,30 +52,30 @@ make benchmark
 
 
 
-1. **baseline** - Базовый тест (4M сообщений/сек)
-2. **hot_type** - Горячий тип (70% сообщений типа 0)
-3. **burst_pattern** - Всплески трафика
-4. **imbalanced_processing** - Несбалансированная обработка
-5. **ordering_stress** - Стресс-тест упорядочивания
-6. **strategy_bottleneck** - Узкое место стратегии
+1. **baseline** - Baseline test (4M messages/sec)
+2. **hot_type** - Hot type (70% type-0 messages)
+3. **burst_pattern** - Traffic bursts
+4. **imbalanced_processing** - Imbalanced processing
+5. **ordering_stress** - Ordering stress test
+6. **strategy_bottleneck** - Strategy bottleneck
 
 
 
-Все настройки находятся в файлах `configs/*.json`. Основные параметры:
+All settings are in `configs/*.json` files. Main parameters:
 
-- `producers.count` - Количество производителей
-- `producers.messages_per_sec` - Скорость генерации сообщений
-- `processors.count` - Количество процессоров
-- `strategies.count` - Количество стратегий
-- `duration_secs` - Длительность теста
+- `producers.count` - Number of producers
+- `producers.messages_per_sec` - Message generation rate
+- `processors.count` - Number of processors
+- `strategies.count` - Number of strategies
+- `duration_secs` - Test duration
 
 
 
-Система рассчитана на:
-- **10+ миллионов сообщений/сек** общей пропускной способности
-- **< 5 микросекунд** латентности end-to-end (p99)
-- **0 потерь сообщений**
-- **0 нарушений порядка**
+The system is designed for:
+- **10+ million messages/sec** total throughput
+- **< 5 microseconds** end-to-end latency (p99)
+- **0 message loss**
+- **0 ordering violations**
 
 
 
@@ -113,4 +113,4 @@ results/
 make help
 ```
 
-Или посмотрите полную документацию в `README.md`.
+Or see the full documentation in `README.md`.

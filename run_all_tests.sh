@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-echo "Запуск всех тестовых сценариев Message Router..."
+echo "Running all Message Router test scenarios..."
 
 
 mkdir -p results
@@ -12,12 +12,12 @@ run_test() {
     local config_file=$2
     local output_file="results/${test_name}_summary.txt"
     
-    echo "Запуск теста: ${test_name}..."
-    echo "Конфигурация: ${config_file}"
+    echo "Running test: ${test_name}..."
+    echo "Configuration: ${config_file}"
     
     if [ -f "${config_file}" ]; then
         ./message_router ${config_file} > ${output_file} 2>&1
-        echo "Результаты сохранены в ${output_file}"
+        echo "Results saved in ${output_file}"
         
         
         if grep -q "Test Result: PASSED" ${output_file}; then
@@ -26,15 +26,15 @@ run_test() {
             echo "✗ ${test_name}: FAILED"
         fi
     else
-        echo "Ошибка: файл конфигурации ${config_file} не найден"
+        echo "Error: configuration file ${config_file} not found"
         return 1
     fi
 }
 
 
 if [ ! -f "./message_router" ]; then
-    echo "Ошибка: исполняемый файл message_router не найден"
-    echo "Сначала соберите проект: mkdir build && cd build && cmake .. && make"
+    echo "Error: message_router executable not found"
+    echo "First build the project: mkdir build && cd build && cmake .. && make"
     exit 1
 fi
 
@@ -47,25 +47,25 @@ run_test "ordering_stress" "configs/ordering_stress.json"
 run_test "strategy_bottleneck" "configs/strategy_bottleneck.json"
 
 echo ""
-echo "Все тесты завершены!"
-echo "Результаты доступны в директории results/"
+echo "All tests completed!"
+echo "Results available in results/ directory"
 
 
-echo "Создание сводного отчета..."
+echo "Creating summary report..."
 cat > results/test_summary.txt << EOF
-=== СВОДНЫЙ ОТЧЕТ ТЕСТОВ ===
-Дата: $(date)
-Версия: Message Router v1.0
+=== TEST SUMMARY REPORT ===
+Date: $(date)
+Version: Message Router v1.0
 
-Запущенные тесты:
-1. baseline - Базовый тест (4M сообщений/сек)
-2. hot_type - Тест горячего типа (70% тип-0)
-3. burst_pattern - Тест всплесков трафика
-4. imbalanced_processing - Тест несбалансированной обработки
-5. ordering_stress - Тест стресса упорядочивания
-6. strategy_bottleneck - Тест узкого места стратегии
+Tests run:
+1. baseline - Baseline test (4M messages/sec)
+2. hot_type - Hot type test (70% type-0)
+3. burst_pattern - Traffic burst test
+4. imbalanced_processing - Imbalanced processing test
+5. ordering_stress - Ordering stress test
+6. strategy_bottleneck - Strategy bottleneck test
 
-Результаты:
+Results:
 EOF
 
 
@@ -77,4 +77,4 @@ for test in baseline hot_type burst_pattern imbalanced_processing ordering_stres
     fi
 done
 
-echo "Сводный отчет создан: results/test_summary.txt"
+echo "Summary report created: results/test_summary.txt"

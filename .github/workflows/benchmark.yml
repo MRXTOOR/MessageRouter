@@ -1,0 +1,267 @@
+name: Benchmark
+
+on:
+  schedule:
+    - cron: '0 2 * * 1' # Every Monday at 2 AM UTC
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'include/**'
+      - 'benchmarks/**'
+      - 'CMakeLists.txt'
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          cmake \
+          make \
+          libjsoncpp-dev \
+          libatomic1 \
+          build-essential \
+          pkg-config \
+          python3 \
+          python3-pip
+    
+    - name: Install Google Benchmark
+      run: |
+        git clone https://github.com/google/benchmark.git
+        cd benchmark
+        git checkout v1.8.3
+        mkdir build && cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DBENCHMARK_ENABLE_GTEST_TESTS=OFF
+        make -j$(nproc)
+        sudo make install
+    
+    - name: Build Release
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17
+        make -j$(nproc)
+    
+    - name: Run Queue Performance Benchmarks
+      run: |
+        cd build
+        ./benchmarks/queue_perf \
+          --benchmark_format=json \
+          --benchmark_out=queue_performance.json \
+          --benchmark_repetitions=3
+    
+    - name: Run Routing Latency Benchmarks
+      run: |
+        cd build
+        ./benchmarks/routing_perf \
+          --benchmark_format=json \
+          --benchmark_out=routing_latency.json \
+          --benchmark_repetitions=3
+    
+    - name: Run Memory Allocation Benchmarks
+      run: |
+        cd build
+        ./benchmarks/memory_perf \
+          --benchmark_format=json \
+          --benchmark_out=memory_allocation.json \
+          --benchmark_repetitions=3
+    
+    - name: Run Scaling Benchmarks
+      run: |
+        cd build
+        ./benchmarks/scaling_perf \
+          --benchmark_format=json \
+          --benchmark_out=scaling_performance.json \
+          --benchmark_repetitions=3
+    
+    - name: Run Simple Benchmarks
+      run: |
+        cd build
+        ./benchmarks/simple_bench \
+          --benchmark_format=json \
+          --benchmark_out=simple_benchmark.json \
+          --benchmark_repetitions=3
+    
+    - name: Install benchmark analysis tools
+      run: |
+        pip3 install matplotlib pandas numpy
+    
+    - name: Generate benchmark report
+      run: |
+        python3 << 'EOF'
+        import json
+        import matplotlib.pyplot as plt
+        import pandas as pd
+        import os
+        
+        def load_benchmark_data(filename):
+            try:
+                with open(filename, 'r') as f:
+                    data = json.load(f)
+                return data['benchmarks']
+            except:
+                return []
+        
+        def create_performance_chart(benchmarks, title, filename):
+            if not benchmarks:
+                return
+            
+            names = [b['name'] for b in benchmarks]
+            times = [b['real_time'] for b in benchmarks]
+            
+            plt.figure(figsize=(12, 6))
+            plt.bar(names, times)
+            plt.title(title)
+            plt.xlabel('Benchmark')
+            plt.ylabel('Time (ns)')
+            plt.xticks(rotation=45, ha='right')
+            plt.tight_layout()
+            plt.savefig(filename, dpi=300, bbox_inches='tight')
+            plt.close()
+        
+        # Load all benchmark data
+        queue_data = load_benchmark_data('build/queue_performance.json')
+        routing_data = load_benchmark_data('build/routing_latency.json')
+        memory_data = load_benchmark_data('build/memory_allocation.json')
+        scaling_data = load_benchmark_data('build/scaling_performance.json')
+        simple_data = load_benchmark_data('build/simple_benchmark.json')
+        
+        # Create charts
+        create_performance_chart(queue_data, 'Queue Performance', 'queue_performance.png')
+        create_performance_chart(routing_data, 'Routing Latency', 'routing_latency.png')
+        create_performance_chart(memory_data, 'Memory Allocation', 'memory_allocation.png')
+        create_performance_chart(scaling_data, 'Scaling Performance', 'scaling_performance.png')
+        create_performance_chart(simple_data, 'Simple Benchmarks', 'simple_benchmark.png')
+        
+        # Generate summary report
+        with open('benchmark_summary.md', 'w') as f:
+            f.write("# Benchmark Results\n\n")
+            f.write(f"Generated on: {pd.Timestamp.now()}\n\n")
+            
+            for category, data in [("Queue Performance", queue_data), 
+                                 ("Routing Latency", routing_data),
+                                 ("Memory Allocation", memory_data),
+                                 ("Scaling Performance", scaling_data),
+                                 ("Simple Benchmarks", simple_data)]:
+                if data:
+                    f.write(f"## {category}\n\n")
+                    f.write("| Benchmark | Time (ns) | CPU Time (ns) | Iterations |\n")
+                    f.write("|-----------|-----------|---------------|----------|\n")
+                    for b in data:
+                        f.write(f"| {b['name']} | {b['real_time']:.2f} | {b['cpu_time']:.2f} | {b['iterations']} |\n")
+                    f.write("\n")
+        
+        print("Benchmark analysis completed!")
+        EOF
+    
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v4
+      with:
+        name: benchmark-results-${{ github.sha }}
+        path: |
+          build/*.json
+          *.png
+          benchmark_summary.md
+        retention-days: 30
+    
+    - name: Comment PR with benchmark results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+          
+          try {
+            const summary = fs.readFileSync('benchmark_summary.md', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 📊 Benchmark Results\n\n${summary}`
+            });
+          } catch (error) {
+            console.log('Could not read benchmark summary:', error.message);
+          }
+
+  performance-regression:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          cmake \
+          make \
+          libjsoncpp-dev \
+          libatomic1 \
+          build-essential \
+          pkg-config
+    
+    - name: Build current PR
+      run: |
+        mkdir build-current
+        cd build-current
+        cmake .. -DCMAKE_BUILD_TYPE=Release
+        make -j$(nproc)
+    
+    - name: Build main branch
+      run: |
+        git checkout main
+        mkdir build-main
+        cd build-main
+        cmake .. -DCMAKE_BUILD_TYPE=Release
+        make -j$(nproc)
+    
+    - name: Run performance comparison
+      run: |
+        echo "Running performance comparison..."
+        
+        # Run current PR benchmarks
+        cd build-current
+        timeout 30s ./message_router ../configs/baseline.json > ../current_results.txt 2>&1 || echo "Current PR test completed"
+        
+        # Run main branch benchmarks
+        cd ../build-main
+        timeout 30s ./message_router ../configs/baseline.json > ../main_results.txt 2>&1 || echo "Main branch test completed"
+        
+        # Compare results
+        echo "## Performance Comparison" >> ../comparison.md
+        echo "" >> ../comparison.md
+        echo "### Current PR Results:" >> ../comparison.md
+        cat ../current_results.txt >> ../comparison.md
+        echo "" >> ../comparison.md
+        echo "### Main Branch Results:" >> ../comparison.md
+        cat ../main_results.txt >> ../comparison.md
+    
+    - name: Comment performance comparison
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          try {
+            const comparison = fs.readFileSync('comparison.md', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comparison
+            });
+          } catch (error) {
+            console.log('Could not read comparison results:', error.message);
+          }

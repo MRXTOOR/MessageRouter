@@ -6,25 +6,25 @@
 
 
 void runAllBenchmarks() {
-    std::cout << "Запуск всех бенчмарков..." << std::endl;
+    std::cout << "Running all benchmarks..." << std::endl;
     
     
     system("mkdir -p results/benchmarks");
     
     
-    std::cout << "Запуск бенчмарка производительности очередей..." << std::endl;
+    std::cout << "Running queue performance benchmark..." << std::endl;
     system("./queue_perf --benchmark_format=json --benchmark_out=results/benchmarks/queue_performance.json");
     
-    std::cout << "Запуск бенчмарка задержки маршрутизации..." << std::endl;
+    std::cout << "Running routing latency benchmark..." << std::endl;
     system("./routing_perf --benchmark_format=json --benchmark_out=results/benchmarks/routing_latency.json");
     
-    std::cout << "Запуск бенчмарка выделения памяти..." << std::endl;
+    std::cout << "Running memory allocation benchmark..." << std::endl;
     system("./memory_perf --benchmark_format=json --benchmark_out=results/benchmarks/memory_allocation.json");
     
-    std::cout << "Запуск бенчмарка масштабирования..." << std::endl;
+    std::cout << "Running scaling benchmark..." << std::endl;
     system("./scaling_perf --benchmark_format=json --benchmark_out=results/benchmarks/scaling_benchmark.json");
     
-    std::cout << "Все бенчмарки завершены. Результаты сохранены в results/benchmarks/" << std::endl;
+    std::cout << "All benchmarks completed. Results saved in results/benchmarks/" << std::endl;
 }
 
 int main(int argc, char* argv[]) {

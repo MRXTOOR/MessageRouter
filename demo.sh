@@ -1,101 +1,101 @@
 #!/bin/bash
 
 
-echo "=== ДЕМОНСТРАЦИЯ MESSAGE ROUTER ==="
-echo "Высокопроизводительная система маршрутизации сообщений без блокировок"
+echo "=== MESSAGE ROUTER DEMONSTRATION ==="
+echo "High-performance lock-free message routing system"
 echo ""
 
 
 if ! command -v docker &> /dev/null; then
-    echo "❌ Docker не найден. Установите Docker для запуска демонстрации."
+    echo "❌ Docker not found. Install Docker to run the demonstration."
     exit 1
 fi
 
 if ! command -v docker-compose &> /dev/null; then
-    echo "❌ Docker Compose не найден. Установите Docker Compose для запуска демонстрации."
+    echo "❌ Docker Compose not found. Install Docker Compose to run the demonstration."
     exit 1
 fi
 
-echo "✅ Docker и Docker Compose найдены"
+echo "✅ Docker and Docker Compose found"
 echo ""
 
 
 mkdir -p results
 
-echo "🔨 Сборка Docker образа..."
+echo "🔨 Building Docker image..."
 docker-compose build
 
 if [ $? -ne 0 ]; then
-    echo "❌ Ошибка сборки Docker образа"
+    echo "❌ Docker image build error"
     exit 1
 fi
 
-echo "✅ Docker образ собран успешно"
+echo "✅ Docker image built successfully"
 echo ""
 
-echo "🚀 Запуск демонстрации..."
+echo "🚀 Starting demonstration..."
 echo ""
 
 
-echo "=== ТЕСТ 1: Базовый сценарий (4M сообщений/сек) ==="
+echo "=== TEST 1: Baseline scenario (4M messages/sec) ==="
 docker-compose run --rm router-test ./message_router configs/baseline.json
 echo ""
 
 
-echo "=== ТЕСТ 2: Горячий тип сообщений (70% тип-0) ==="
+echo "=== TEST 2: Hot message type (70% type-0) ==="
 docker-compose run --rm router-test ./message_router configs/hot_type.json
 echo ""
 
 
-echo "=== ТЕСТ 3: Всплески трафика ==="
+echo "=== TEST 3: Traffic bursts ==="
 docker-compose run --rm router-test ./message_router configs/burst_pattern.json
 echo ""
 
 
-echo "=== ТЕСТ 4: Несбалансированная обработка ==="
+echo "=== TEST 4: Imbalanced processing ==="
 docker-compose run --rm router-test ./message_router configs/imbalanced_processing.json
 echo ""
 
 
-echo "=== ТЕСТ 5: Стресс-тест упорядочивания ==="
+echo "=== TEST 5: Ordering stress test ==="
 docker-compose run --rm router-test ./message_router configs/ordering_stress.json
 echo ""
 
 
-echo "=== ТЕСТ 6: Узкое место стратегии ==="
+echo "=== TEST 6: Strategy bottleneck ==="
 docker-compose run --rm router-test ./message_router configs/strategy_bottleneck.json
 echo ""
 
-echo "📊 Запуск бенчмарков производительности..."
+echo "📊 Running performance benchmarks..."
 echo ""
 
 
-echo "=== БЕНЧМАРК: Производительность очередей ==="
+echo "=== BENCHMARK: Queue performance ==="
 docker-compose run --rm router-benchmark ./benchmarks/queue_perf --benchmark_format=console
 echo ""
 
-echo "=== БЕНЧМАРК: Задержка маршрутизации ==="
+echo "=== BENCHMARK: Routing latency ==="
 docker-compose run --rm router-benchmark ./benchmarks/routing_perf --benchmark_format=console
 echo ""
 
-echo "=== БЕНЧМАРК: Выделение памяти ==="
+echo "=== BENCHMARK: Memory allocation ==="
 docker-compose run --rm router-benchmark ./benchmarks/memory_perf --benchmark_format=console
 echo ""
 
-echo "=== БЕНЧМАРК: Масштабирование ==="
+echo "=== BENCHMARK: Scaling ==="
 docker-compose run --rm router-benchmark ./benchmarks/scaling_perf --benchmark_format=console
 echo ""
 
-echo "✅ Демонстрация завершена!"
+echo "✅ Demonstration completed!"
 echo ""
-echo "📁 Результаты сохранены в директории results/"
-echo "📊 Для просмотра детальных результатов используйте:"
+echo "📁 Results saved in results/ directory"
+echo "📊 To view detailed results use:"
 echo "   - cat results/*_summary.txt"
 echo "   - ls results/benchmarks/"
 echo ""
-echo "🎯 Система готова к использованию!"
+echo "🎯 System ready for use!"
 echo ""
-echo "💡 Дополнительные команды:"
+echo "💡 Additional commands:"
 echo "   - make help          
 echo "   - make test          
 echo "   - make benchmark     

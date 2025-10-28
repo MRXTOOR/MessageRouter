@@ -6,7 +6,7 @@
 
 namespace MessageRouter {
 
-// Простая SPSC (Single Producer Single Consumer) очередь
+// Simple SPSC (Single Producer Single Consumer) queue
 template<typename T, size_t Size>
 class LockFreeSPSCQueue {
 private:
@@ -29,7 +29,7 @@ public:
         const size_t next_tail = (current_tail + 1) & (Size - 1);
         
         if (next_tail == head_.load(std::memory_order_acquire)) {
-            return false; // Очередь полная
+            return false; // Queue is full
         }
         
         buffer_[current_tail].data = item;
@@ -43,11 +43,11 @@ public:
         const size_t current_head = head_.load(std::memory_order_relaxed);
         
         if (current_head == tail_.load(std::memory_order_acquire)) {
-            return false; // Очередь пустая
+            return false; // Queue is empty
         }
         
         if (!buffer_[current_head].ready.load(std::memory_order_acquire)) {
-            return false; // Данные еще не готовы
+            return false; // Data not ready yet
         }
         
         item = buffer_[current_head].data;

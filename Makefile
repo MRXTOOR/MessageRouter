@@ -18,47 +18,47 @@ all: build
 
 
 build:
-	@echo "Сборка Message Router..."
+	@echo "Building Message Router..."
 	@mkdir -p $(BUILD_DIR)
 	@cd $(BUILD_DIR) && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="$(CXXFLAGS)" ..
 	@cd $(BUILD_DIR) && make -j$$(nproc)
-	@echo "Сборка завершена!"
+	@echo "Build completed!"
 
 
 clean:
-	@echo "Очистка..."
+	@echo "Cleaning..."
 	@rm -rf $(BUILD_DIR)
 	@rm -rf $(RESULTS_DIR)
-	@echo "Очистка завершена!"
+	@echo "Cleaning completed!"
 
 
 test: build
-	@echo "Запуск тестов..."
+	@echo "Running tests..."
 	@cd $(BUILD_DIR) && ./run_all_tests.sh
 
 
 benchmark: build
-	@echo "Запуск бенчмарков..."
+	@echo "Running benchmarks..."
 	@cd $(BUILD_DIR) && ./benchmarks/run_all_benchmarks.sh
 
 
 docker-build:
-	@echo "Сборка Docker образа..."
+	@echo "Building Docker image..."
 	@docker-compose build
 
 
 docker-test:
-	@echo "Запуск тестов в Docker..."
+	@echo "Running tests in Docker..."
 	@docker-compose run router-test
 
 
 docker-benchmark:
-	@echo "Запуск бенчмарков в Docker..."
+	@echo "Running benchmarks in Docker..."
 	@docker-compose run router-benchmark
 
 
 docker-test-all:
-	@echo "Запуск всех тестов в Docker..."
+	@echo "Running all tests in Docker..."
 	@docker-compose run router-test ./message_router configs/baseline.json
 	@docker-compose run router-test ./message_router configs/hot_type.json
 	@docker-compose run router-test ./message_router configs/burst_pattern.json
@@ -68,71 +68,71 @@ docker-test-all:
 
 
 test-baseline: build
-	@echo "Запуск базового теста..."
+	@echo "Running baseline test..."
 	@cd $(BUILD_DIR) && ./message_router ../configs/baseline.json
 
 test-hot-type: build
-	@echo "Запуск теста горячего типа..."
+	@echo "Running hot type test..."
 	@cd $(BUILD_DIR) && ./message_router ../configs/hot_type.json
 
 test-burst: build
-	@echo "Запуск теста всплесков..."
+	@echo "Running burst test..."
 	@cd $(BUILD_DIR) && ./message_router ../configs/burst_pattern.json
 
 test-imbalanced: build
-	@echo "Запуск теста несбалансированной обработки..."
+	@echo "Running imbalanced processing test..."
 	@cd $(BUILD_DIR) && ./message_router ../configs/imbalanced_processing.json
 
 test-ordering: build
-	@echo "Запуск теста упорядочивания..."
+	@echo "Running ordering test..."
 	@cd $(BUILD_DIR) && ./message_router ../configs/ordering_stress.json
 
 test-bottleneck: build
-	@echo "Запуск теста узкого места..."
+	@echo "Running bottleneck test..."
 	@cd $(BUILD_DIR) && ./message_router ../configs/strategy_bottleneck.json
 
 
 install-deps:
-	@echo "Установка зависимостей..."
+	@echo "Installing dependencies..."
 	@sudo apt-get update
 	@sudo apt-get install -y build-essential cmake clang libbenchmark-dev libjsoncpp-dev
 
 
 check-deps:
-	@echo "Проверка зависимостей..."
-	@which clang++ || (echo "Ошибка: clang++ не найден" && exit 1)
-	@which cmake || (echo "Ошибка: cmake не найден" && exit 1)
-	@pkg-config --exists benchmark || (echo "Ошибка: libbenchmark не найден" && exit 1)
-	@pkg-config --exists jsoncpp || (echo "Ошибка: libjsoncpp не найден" && exit 1)
-	@echo "Все зависимости найдены!"
+	@echo "Checking dependencies..."
+	@which clang++ || (echo "Error: clang++ not found" && exit 1)
+	@which cmake || (echo "Error: cmake not found" && exit 1)
+	@pkg-config --exists benchmark || (echo "Error: libbenchmark not found" && exit 1)
+	@pkg-config --exists jsoncpp || (echo "Error: libjsoncpp not found" && exit 1)
+	@echo "All dependencies found!"
 
 
 debug:
-	@echo "Сборка в режиме отладки..."
+	@echo "Building in debug mode..."
 	@mkdir -p $(BUILD_DIR)
 	@cd $(BUILD_DIR) && cmake -DCMAKE_BUILD_TYPE=Debug ..
 	@cd $(BUILD_DIR) && make -j$$(nproc)
-	@echo "Отладочная сборка завершена!"
+	@echo "Debug build completed!"
 
 
 profile: build
-	@echo "Запуск анализа производительности..."
+	@echo "Running performance analysis..."
 	@cd $(BUILD_DIR) && perf record ./message_router ../configs/baseline.json
 	@cd $(BUILD_DIR) && perf report
 
 
 help:
-	@echo "Доступные команды:"
-	@echo "  build          - Сборка проекта"
-	@echo "  clean          - Очистка файлов сборки"
-	@echo "  test           - Запуск всех тестов"
-	@echo "  benchmark      - Запуск бенчмарков"
-	@echo "  docker-build   - Сборка Docker образа"
-	@echo "  docker-test    - Запуск тестов в Docker"
-	@echo "  docker-benchmark - Запуск бенчмарков в Docker"
-	@echo "  test-<name>    - Запуск конкретного теста"
-	@echo "  install-deps   - Установка зависимостей"
-	@echo "  check-deps     - Проверка зависимостей"
-	@echo "  debug          - Отладочная сборка"
-	@echo "  profile        - Анализ производительности"
-	@echo "  help           - Показать эту справку"
+	@echo "Available commands:"
+	@echo "  build          - Build project"
+	@echo "  clean          - Clean build files"
+	@echo "  test           - Run all tests"
+	@echo "  benchmark      - Run benchmarks"
+	@echo "  docker-build   - Build Docker image"
+	@echo "  docker-test    - Run tests in Docker"
+	@echo "  docker-benchmark - Run benchmarks in Docker"
+	@echo "  test-<name>    - Run specific test"
+	@echo "  install-deps   - Install dependencies"
+	@echo "  check-deps     - Check dependencies"
+	@echo "  debug          - Debug build"
+	@echo "  profile        - Performance analysis"
+	@echo "  help           - Show this help"

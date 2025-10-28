@@ -72,12 +72,12 @@ void Stage2Router::routing_loop() {
                 }
                 
                 found_message = true;
-                // НЕ выходим из цикла - обрабатываем все доступные сообщения
+                // Do NOT exit the loop - process all available messages
             }
         }
         
         if (!found_message) {
-            // Все очереди пустые - busy-waiting для минимальной задержки
+            // All queues are empty - busy-waiting for minimal latency
             std::this_thread::yield();
         }
     }

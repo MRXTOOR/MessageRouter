@@ -28,7 +28,7 @@ StrategyManager* g_strategy_manager = nullptr;
 
 
 void signal_handler(int signal) {
-    std::cout << "\nПолучен сигнал " << signal << ", завершение работы..." << std::endl;
+    std::cout << "\nReceived signal " << signal << ", shutting down..." << std::endl;
     g_running.store(false);
 }
 
@@ -39,8 +39,8 @@ int main(int argc, char* argv[]) {
     
     
     if (argc != 2) {
-        std::cerr << "Использование: " << argv[0] << " <config_file>" << std::endl;
-        std::cerr << "Пример: " << argv[0] << " configs/baseline.json" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " <config_file>" << std::endl;
+        std::cerr << "Example: " << argv[0] << " configs/baseline.json" << std::endl;
         return 1;
     }
     

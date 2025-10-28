@@ -49,42 +49,42 @@ void Strategy::strategy_loop() {
     Message message;
     
     while (running_.load()) {
-        // Обрабатываем ВСЕ доступные сообщения из своей SPSC очереди
+        // Process ALL available messages from our SPSC queue
         while (input_queue_->try_pop(message)) {
             process_message(message);
         }
         
-        // Очередь пустая - busy-waiting для минимальной задержки
+        // Queue is empty - busy-waiting for minimal latency
         std::this_thread::yield();
     }
 }
 
 void Strategy::process_message(const Message& message) {
-    // Упрощенная проверка порядка для максимальной производительности
+    // Simplified ordering check for maximum performance
     auto key = std::make_pair(message.producer_id, message.msg_type);
     auto it = expected_sequence_.find(key);
     
     if (it == expected_sequence_.end()) {
-        // Первое сообщение от этого производителя и типа
+        // First message from this producer and type
         expected_sequence_[key] = message.sequence_number + 1;
     } else {
-        // Простая проверка порядка
+        // Simple ordering check
         if (message.sequence_number != it->second) {
-            // Нарушение порядка - отмечаем но не блокируем
+            // Ordering violation - mark but do not block
             ordering_violations_.fetch_add(1);
         }
         it->second = message.sequence_number + 1;
     }
     
-    // Симулируем обработку стратегии
+    // Simulate strategy processing
     simulate_strategy_processing();
     
     messages_delivered_.fetch_add(1, std::memory_order_relaxed);
 }
 
 void Strategy::simulate_strategy_processing() {
-    // Минимальная обработка для максимальной производительности
-    // В реальной системе здесь была бы логика стратегии
+    // Minimal processing for maximum performance
+    // In a real system, strategy logic would be here
 }
 
 StrategyManager::StrategyManager(const SystemConfig* config,

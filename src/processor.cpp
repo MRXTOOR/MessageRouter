@@ -49,37 +49,37 @@ void Processor::processor_loop() {
     Message message;
     
     while (running_.load()) {
-        // Обрабатываем ВСЕ доступные сообщения
+        // Process ALL available messages
         while (input_queue_->try_pop(message)) {
-            // Обрабатываем сообщение
+            // Process the message
             simulate_processing(message);
             
-            // Отправляем обработанное сообщение с повторными попытками
+            // Send processed message with retries
             bool sent = false;
             for (int retry = 0; retry < 1000 && !sent; ++retry) {
                 if (output_queue_->try_push(message)) {
                     messages_processed_.fetch_add(1, std::memory_order_relaxed);
                     sent = true;
                 } else {
-                    // Очередь полная - небольшая пауза и повторная попытка
+                    // Queue is full - small pause and retry
                     std::this_thread::yield();
                 }
             }
         }
         
-        // Очередь пустая - busy-waiting для минимальной задержки
+        // Queue is empty - busy-waiting for minimal latency
         std::this_thread::yield();
     }
 }
 
 void Processor::simulate_processing(Message& message) {
-    // Заполняем поля процессора
+    // Fill processor fields
     message.processor_id = processor_id_;
     message.processing_timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::high_resolution_clock::now().time_since_epoch()).count();
     
-    // Минимальная обработка для максимальной производительности
-    // В реальной системе здесь была бы логика обработки
+    // Minimal processing for maximum performance
+    // In a real system, processing logic would be here
 }
 
 ProcessorManager::ProcessorManager(const SystemConfig* config,
